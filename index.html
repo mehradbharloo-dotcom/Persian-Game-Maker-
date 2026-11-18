@@ -14,7 +14,7 @@ button,select,input{font:inherit}button{border:0;border-radius:6px;padding:8px 1
 @media(max-width:760px){.layout{grid-template-columns:220px 1fr}.tag{display:none}.logo{font-size:15px}.top{padding:0 7px;gap:5px}button{padding:7px;font-size:11px}}
 </style></head>
 <body>
-<header class="top"><div class="logo">Persian Game Maker</div><div class="tag">ویرایشگر سه‌بعدی فارسی | نسخه ۵</div><div class="actions"><button id="addCube">＋ مکعب</button><button id="addSphere">＋ کره</button><button id="addCylinder">＋ استوانه</button><button class="secondary" id="save">ذخیره</button><button class="secondary" id="load">بارگذاری</button></div></header>
+<header class="top"><div class="logo">Persian Game Maker</div><div class="tag">ویرایشگر سه‌بعدی فارسی | نسخه ۶</div><div class="actions"><button id="addCube">＋ مکعب</button><button id="addSphere">＋ کره</button><button id="addCylinder">＋ استوانه</button><button class="secondary" id="save">ذخیره</button><button class="secondary" id="load">بارگذاری</button></div></header>
 <div class="layout"><aside class="side">
 <h3>اشیای صحنه</h3><div id="objects"></div>
 <div class="row"><button class="danger" id="delete">حذف انتخاب‌شده</button><button class="secondary" id="duplicate">تکثیر</button></div>
@@ -22,7 +22,7 @@ button,select,input{font:inherit}button{border:0;border-radius:6px;padding:8px 1
 <div class="field"><label>نام</label><input id="objName" type="text" value="مکعب"></div>
 <div class="field"><label>موقعیت X</label><input id="px" type="number" step="0.1"></div><div class="field"><label>موقعیت Y</label><input id="py" type="number" step="0.1"></div><div class="field"><label>موقعیت Z</label><input id="pz" type="number" step="0.1"></div>
 <div class="field"><label>چرخش X</label><input id="rx" type="number" step="5"></div><div class="field"><label>چرخش Y</label><input id="ry" type="number" step="5"></div><div class="field"><label>چرخش Z</label><input id="rz" type="number" step="5"></div>
-<div class="field"><label>اندازه</label><input id="scale" type="number" min="0.1" max="10" step="0.1"></div>
+<div class="field"><label>اندازه</label><input id="scale" type="number" min="0.1" max="10" step="0.1"></div><div class="field"><label>اندازه X</label><input id="sx" type="number" min="0.1" max="10" step="0.1"></div><div class="field"><label>اندازه Y</label><input id="sy" type="number" min="0.1" max="10" step="0.1"></div><div class="field"><label>اندازه Z</label><input id="sz" type="number" min="0.1" max="10" step="0.1"></div>
 <div class="row"><button class="secondary" id="resetObj">بازنشانی تنظیمات</button></div>
 <div class="hint">راهنما<br>• کشیدن فضای خالی: چرخاندن دوربین<br>• کلیک روی شیء: انتخاب<br>• چرخ ماوس: بزرگ‌نمایی<br>• برای جابه‌جایی دقیق، مقدار محورهای X، Y و Z را تغییر بده<br>• ابزارهای جابه‌جایی، چرخش و تغییر اندازه را از نوار بالا انتخاب کن و شیء انتخاب‌شده را بکش<br>• محورهای رنگی کنار شیء انتخاب‌شده: X قرمز، Y سبز، Z آبی<br>• در ابزار جابه‌جایی، Shift حرکت عمودی می‌دهد<br>• در ابزار چرخش، کشیدن افقی چرخش Y و کشیدن عمودی چرخش X را تغییر می‌دهد<br>• در ابزار اندازه، کشیدن بالا و پایین اندازه را تغییر می‌دهد<br>• ذخیره و بارگذاری، صحنه را در همین مرورگر نگه می‌دارد</div>
 </aside>
@@ -33,7 +33,7 @@ button,select,input{font:inherit}button{border:0;border-radius:6px;padding:8px 1
 var canvas=document.getElementById("scene"),gl=canvas.getContext("webgl")||canvas.getContext("experimental-webgl"),status=document.getElementById("status"),objectsEl=document.getElementById("objects");
 if(!gl){status.textContent="مرورگر یا کارت گرافیک از WebGL پشتیبانی نمی‌کند.";return;}
 var items=[],selected=-1,yaw=-.65,pitch=.45,zoom=8,drag=false,moved=false,lastX=0,lastY=0,program;
-var moveMode=false,objectDragging=false,transformMode="select";
+var moveMode=false,objectDragging=false,transformMode="select",activeAxis=-1,axisScreen=null;
 var vs="attribute vec3 p; attribute vec3 c; uniform mat4 mvp; varying vec3 color; void main(){gl_Position=mvp*vec4(p,1.0);color=c;}";
 var fs="precision mediump float; varying vec3 color; void main(){gl_FragColor=vec4(color,1.0);}";
 function shader(t,s){var sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
@@ -47,7 +47,7 @@ function sc(x,y,z){return[x,0,0,0,0,y,0,0,0,0,z,0,0,0,0,1];}
 function rx(a){var c=Math.cos(a),s=Math.sin(a);return[1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1];}
 function ry(a){var c=Math.cos(a),s=Math.sin(a);return[c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1];}
 function rz(a){var c=Math.cos(a),s=Math.sin(a);return[c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1];}
-function model(o){var d=Math.PI/180;return mul(tr(o.x,o.y,o.z),mul(rz(o.rz*d),mul(ry(o.ry*d),mul(rx(o.rx*d),sc(o.s,o.s,o.s)))));}
+function model(o){var d=Math.PI/180;return mul(tr(o.x,o.y,o.z),mul(rz(o.rz*d),mul(ry(o.ry*d),mul(rx(o.rx*d),sc(o.sx||o.s,o.sy||o.s,o.sz||o.s)))));}
 function camera(){return mul(translate(0,0,-zoom),mul(rx(pitch),ry(yaw)));}
 function translate(x,y,z){return tr(x,y,z);}
 function mesh(type){
@@ -59,7 +59,7 @@ else{var n=24;for(var j=0;j<n;j++){var a=j*2*Math.PI/n,b=(j+1)*2*Math.PI/n,A=[Ma
 return new Float32Array(v);
 }
 var meshes={مکعب:mesh("مکعب"),کره:mesh("کره"),استوانه:mesh("استوانه")};
-function make(type){var n=items.length+1;items.push({type:type,name:type+" "+n,x:(n-1)%3*1.4,y:0,z:Math.floor((n-1)/3)*1.4,rx:0,ry:0,rz:0,s:1});selected=items.length-1;refresh();draw();status.textContent=type+" به صحنه اضافه شد.";}
+function make(type){var n=items.length+1;items.push({type:type,name:type+" "+n,x:(n-1)%3*1.4,y:0,z:Math.floor((n-1)/3)*1.4,rx:0,ry:0,rz:0,s:1,sx:1,sy:1,sz:1});selected=items.length-1;refresh();draw();status.textContent=type+" به صحنه اضافه شد.";}
 function attr(buffer,loc){gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,3,gl.FLOAT,false,0,0);}
 var grid=[],gridColors=[];function line(a,b){grid.push(a[0],a[1],a[2],b[0],b[1],b[2]);for(var i=0;i<2;i++)gridColors.push(.24,.28,.35);}
 for(var k=-10;k<=10;k++){line([k,-.52,-10],[k,-.52,10]);line([-10,-.52,k],[10,-.52,k]);}
@@ -74,10 +74,10 @@ x,y,z, x+L,y,z,  x+L,y,z, x+L-.22*L,y+.08*L,z,  x+L,y,z, x+L-.22*L,y-.08*L,z,
 x,y,z, x,y+L,z,  x,y+L,z, x+.08*L,y+L-.22*L,z,  x,y+L,z, x-.08*L,y+L-.22*L,z,
 x,y,z, x,y,z+L,  x,y,z+L, x+.08*L,y,z+L-.22*L,  x,y,z+L, x-.08*L,y,z+L-.22*L
 ];
-var axisColors=[];
+var axisColors=[];\nif(transformMode==="rotate"){for(var ri=0;ri<3;ri++){for(var rj=0;rj<48;rj++){var a1=rj*Math.PI/24,a2=(rj+1)*Math.PI/24,R=L*.72,p1,p2;if(ri===0){p1=[x,y+Math.cos(a1)*R,z+Math.sin(a1)*R];p2=[x,y+Math.cos(a2)*R,z+Math.sin(a2)*R];}else if(ri===1){p1=[x+Math.cos(a1)*R,y,z+Math.sin(a1)*R];p2=[x+Math.cos(a2)*R,y,z+Math.sin(a2)*R];}else{p1=[x+Math.cos(a1)*R,y+Math.sin(a1)*R,z];p2=[x+Math.cos(a2)*R,y+Math.sin(a2)*R,z];}axisVertices.push(p1[0],p1[1],p1[2],p2[0],p2[1],p2[2]);}}}
 for(var ai=0;ai<6;ai++)axisColors.push(1,.22,.22);
 for(var ai=0;ai<6;ai++)axisColors.push(.25,1,.38);
-for(var ai=0;ai<6;ai++)axisColors.push(.25,.58,1);
+for(var ai=0;ai<6;ai++)axisColors.push(.25,.58,1);\nif(transformMode==="rotate"){for(var ci=0;ci<3;ci++){var cc=[[1,.22,.22],[.25,1,.38],[.25,.58,1]][ci];for(var cj=0;cj<96;cj++)axisColors.push(cc[0],cc[1],cc[2]);}}
 gl.bindBuffer(gl.ARRAY_BUFFER,axisBuffer);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(axisVertices),gl.DYNAMIC_DRAW);
 attr(axisBuffer,locP);
@@ -89,13 +89,13 @@ gl.lineWidth(3);
 gl.drawArrays(gl.LINES,0,axisVertices.length/3);
 }
 }
-function refresh(){objectsEl.innerHTML="";items.forEach(function(o,i){var el=document.createElement("div");el.className="object"+(i===selected?" active":"");el.textContent=o.name+" — "+o.type;el.addEventListener("click",function(){selected=i;refresh();draw();});objectsEl.appendChild(el);});document.getElementById("count").textContent=items.length+" شیء";document.getElementById("selectedLabel").textContent=selected>=0?items[selected].name:"هیچ شیئی انتخاب نشده";var ids=["objName","px","py","pz","rx","ry","rz","scale"],keys=["name","x","y","z","rx","ry","rz","s"];ids.forEach(function(id,j){var el=document.getElementById(id);el.disabled=selected<0;el.value=selected<0?"":items[selected][keys[j]];});}
-function edit(){if(selected<0)return;var o=items[selected];o.name=document.getElementById("objName").value||o.type;["x","y","z","rx","ry","rz"].forEach(function(k){var v=Number(document.getElementById(({x:"px",y:"py",z:"pz",rx:"rx",ry:"ry",rz:"rz"})[k]).value);o[k]=isFinite(v)?v:0;});o.s=Math.max(.1,Math.min(10,Number(document.getElementById("scale").value)||1));refresh();draw();}
-["objName","px","py","pz","rx","ry","rz","scale"].forEach(function(id){document.getElementById(id).addEventListener("change",edit);});
+function refresh(){objectsEl.innerHTML="";items.forEach(function(o,i){var el=document.createElement("div");el.className="object"+(i===selected?" active":"");el.textContent=o.name+" — "+o.type;el.addEventListener("click",function(){selected=i;refresh();draw();});objectsEl.appendChild(el);});document.getElementById("count").textContent=items.length+" شیء";document.getElementById("selectedLabel").textContent=selected>=0?items[selected].name:"هیچ شیئی انتخاب نشده";var ids=["objName","px","py","pz","rx","ry","rz","scale","sx","sy","sz"],keys=["name","x","y","z","rx","ry","rz","s","sx","sy","sz"];ids.forEach(function(id,j){var el=document.getElementById(id);el.disabled=selected<0;el.value=selected<0?"":items[selected][keys[j]];});}
+function edit(){if(selected<0)return;var o=items[selected];o.name=document.getElementById("objName").value||o.type;["x","y","z","rx","ry","rz"].forEach(function(k){var v=Number(document.getElementById(({x:"px",y:"py",z:"pz",rx:"rx",ry:"ry",rz:"rz"})[k]).value);o[k]=isFinite(v)?v:0;});o.s=Math.max(.1,Math.min(10,Number(document.getElementById("scale").value)||1));["sx","sy","sz"].forEach(function(k){o[k]=Math.max(.1,Math.min(10,Number(document.getElementById(k).value)||o.s));});refresh();draw();}
+["objName","px","py","pz","rx","ry","rz","scale","sx","sy","sz"].forEach(function(id){document.getElementById(id).addEventListener("change",edit);});
 document.getElementById("addCube").onclick=function(){make("مکعب");};document.getElementById("addSphere").onclick=function(){make("کره");};document.getElementById("addCylinder").onclick=function(){make("استوانه");};
 document.getElementById("delete").onclick=function(){if(selected<0)return;items.splice(selected,1);selected=items.length?Math.min(selected,items.length-1):-1;refresh();draw();status.textContent="شیء حذف شد.";};
 document.getElementById("duplicate").onclick=function(){if(selected<0)return;var o=JSON.parse(JSON.stringify(items[selected]));o.name=o.name+" - کپی";o.x+=1;items.push(o);selected=items.length-1;refresh();draw();};
-document.getElementById("resetObj").onclick=function(){if(selected<0)return;var o=items[selected];o.x=0;o.y=0;o.z=0;o.rx=o.ry=o.rz=0;o.s=1;refresh();draw();};
+document.getElementById("resetObj").onclick=function(){if(selected<0)return;var o=items[selected];o.x=0;o.y=0;o.z=0;o.rx=o.ry=o.rz=0;o.s=o.sx=o.sy=o.sz=1;refresh();draw();};
 document.getElementById("resetCamera").onclick=function(){yaw=-.65;pitch=.45;zoom=8;draw();};
 document.getElementById("save").onclick=function(){try{localStorage.setItem("pgm-scene-v2",JSON.stringify(items));status.textContent="صحنه در این مرورگر ذخیره شد."; }catch(e){status.textContent="ذخیره‌سازی در این مرورگر ممکن نشد."; }};
 document.getElementById("load").onclick=function(){try{var data=JSON.parse(localStorage.getItem("pgm-scene-v2")||"null");if(!Array.isArray(data))throw Error();items=data;selected=items.length?0:-1;refresh();draw();status.textContent="صحنه بارگذاری شد.";}catch(e){status.textContent="ذخیره معتبری پیدا نشد."; }};
@@ -113,22 +113,13 @@ status.textContent=labels[transformMode];
 document.getElementById("moveTool").onclick=function(){setTransformMode("move");};
 document.getElementById("rotateTool").onclick=function(){setTransformMode("rotate");};
 document.getElementById("scaleTool").onclick=function(){setTransformMode("scale");};
-function project(o){var m=mul(mul(perspective(Math.PI/4,canvas.width/canvas.height,.1,100),camera()),tr(o.x,o.y,o.z));var x=m[0]*0+m[4]*0+m[8]*0+m[12],y=m[1]*0+m[5]*0+m[9]*0+m[13],z=m[3]*0+m[7]*0+m[11]*0+m[15];if(z<=0)return null;return{x:(x/z*.5+.5)*canvas.width,y:(1-(y/z*.5+.5))*canvas.height};}
-canvas.addEventListener("mousedown",function(e){drag=true;moved=false;objectDragging=transformMode!=="select"&&selected>=0;lastX=e.clientX;lastY=e.clientY;if(objectDragging){status.textContent="در حال جابه‌جایی شیء؛ برای حرکت عمودی Shift را نگه دار.";}});
-window.addEventListener("mouseup",function(e){if(!drag)return;drag=false;if(objectDragging){objectDragging=false;if(moved)status.textContent="موقعیت شیء تغییر کرد.";return;}if(!moved){var r=canvas.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*canvas.width,my=(e.clientY-r.top)/r.height*canvas.height,best=-1,dist=1e9;items.forEach(function(o,i){var p=project(o);if(!p)return;var d=Math.hypot(p.x-mx,p.y-my);if(d<dist&&d<Math.max(35,canvas.width*.045)){dist=d;best=i;}});if(best>=0){selected=best;refresh();draw();status.textContent="شیء انتخاب شد: "+items[selected].name;}}});
-window.addEventListener("mousemove",function(e){if(!drag)return;var dx=e.clientX-lastX,dy=e.clientY-lastY;if(objectDragging){
-if(Math.abs(dx)+Math.abs(dy)>0)moved=true;
-var o=items[selected],speed=zoom*.003;
-if(transformMode==="move"){
-if(e.shiftKey){o.y-=dy*speed;}else{o.x+=(dx*Math.cos(yaw)+dy*Math.sin(yaw))*speed;o.z+=(dx*Math.sin(yaw)-dy*Math.cos(yaw))*speed;}
-}else if(transformMode==="rotate"){
-o.ry+=dx*.8;
-o.rx+=dy*.8;
-}else if(transformMode==="scale"){
-o.s=Math.max(.1,Math.min(10,o.s*Math.exp(-dy*.01)));
-}
-lastX=e.clientX;lastY=e.clientY;refresh();draw();return;
-}if(Math.abs(dx)+Math.abs(dy)>2)moved=true;if(moved){yaw+=dx*.008;pitch=Math.max(-1.45,Math.min(1.45,pitch+dy*.008));draw();}lastX=e.clientX;lastY=e.clientY;});
+function project(o){var m=mul(mul(perspective(Math.PI/4,canvas.width/canvas.height,.1,100),camera()),tr(o.x,o.y,o.z));var x=m[12],y=m[13],z=m[15];if(z<=0)return null;return{x:(x/z*.5+.5)*canvas.width,y:(1-(y/z*.5+.5))*canvas.height};}
+function worldProject(x,y,z){var m=mul(mul(perspective(Math.PI/4,canvas.width/canvas.height,.1,100),camera()),tr(x,y,z)),q=m[15];if(q<=0)return null;return{x:(m[12]/q*.5+.5)*canvas.width,y:(1-(m[13]/q*.5+.5))*canvas.height};}
+function axisInfo(){if(selected<0||!items[selected])return null;var o=items[selected],L=Math.max(1.15,o.s*1.6),p=worldProject(o.x,o.y,o.z);if(!p)return null;return [[o.x+L,o.y,o.z],[o.x,o.y+L,o.z],[o.x,o.y,o.z+L]].map(function(v,i){var q=worldProject(v[0],v[1],v[2]);return q?{x:p.x,y:p.y,ex:q.x,ey:q.y,L:L}:null;});}
+function hitAxis(cx,cy){var a=axisInfo();if(!a)return -1;var r=canvas.getBoundingClientRect(),mx=(cx-r.left)/r.width*canvas.width,my=(cy-r.top)/r.height*canvas.height,best=-1,bd=1e9;a.forEach(function(v,i){if(!v)return;var x=v.ex-v.x,y=v.ey-v.y,l=x*x+y*y;if(l<16)return;var t=Math.max(0,Math.min(1,((mx-v.x)*x+(my-v.y)*y)/l)),d=Math.hypot(mx-v.x-t*x,my-v.y-t*y);if(t>.08&&d<bd&&d<20){bd=d;best=i;}});return best;}
+canvas.addEventListener("mousedown",function(e){drag=true;moved=false;lastX=e.clientX;lastY=e.clientY;activeAxis=-1;axisScreen=null;objectDragging=transformMode!=="select"&&selected>=0;if(objectDragging){activeAxis=hitAxis(e.clientX,e.clientY);var a=axisInfo();if(activeAxis>=0&&a){axisScreen=a[activeAxis];status.textContent="محور "+["X","Y","Z"][activeAxis]+" انتخاب شد.";}else{objectDragging=false;status.textContent="برای تغییر دقیق، یکی از محورهای رنگی را بکش."}}});
+window.addEventListener("mouseup",function(e){if(!drag)return;drag=false;if(objectDragging){objectDragging=false;activeAxis=-1;if(moved)status.textContent="تغییر محور اعمال شد.";return;}if(!moved){var r=canvas.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*canvas.width,my=(e.clientY-r.top)/r.height*canvas.height,best=-1,dist=1e9;items.forEach(function(o,i){var p=project(o);if(!p)return;var d=Math.hypot(p.x-mx,p.y-my);if(d<dist&&d<Math.max(35,canvas.width*.045)){dist=d;best=i;}});if(best>=0){selected=best;refresh();draw();status.textContent="شیء انتخاب شد: "+items[selected].name;}}});
+window.addEventListener("mousemove",function(e){if(!drag)return;var dx=e.clientX-lastX,dy=e.clientY-lastY;if(objectDragging&&activeAxis>=0&&axisScreen){if(Math.abs(dx)+Math.abs(dy)>0)moved=true;var r=canvas.getBoundingClientRect(),sx=dx/r.width*canvas.width,sy=dy/r.height*canvas.height,vx=axisScreen.ex-axisScreen.x,vy=axisScreen.ey-axisScreen.y,l=Math.sqrt(vx*vx+vy*vy),amount=(sx*vx+sy*vy)/l*axisScreen.L/l,o=items[selected],pos=["x","y","z"][activeAxis],rot=["rx","ry","rz"][activeAxis],size=["sx","sy","sz"][activeAxis];if(transformMode==="move")o[pos]+=amount;else if(transformMode==="rotate")o[rot]+=amount*90;else if(transformMode==="scale")o[size]=Math.max(.1,Math.min(10,(o[size]||o.s)*Math.exp(amount*.08)));lastX=e.clientX;lastY=e.clientY;refresh();draw();return;}if(Math.abs(dx)+Math.abs(dy)>2)moved=true;if(moved){yaw+=dx*.008;pitch=Math.max(-1.45,Math.min(1.45,pitch+dy*.008));draw();}lastX=e.clientX;lastY=e.clientY;});
 canvas.addEventListener("wheel",function(e){e.preventDefault();zoom=Math.max(3,Math.min(18,zoom+e.deltaY*.008));draw();},{passive:false});
 window.addEventListener("resize",draw);make("مکعب");status.textContent="ویرایشگر آماده است.";
 })();
