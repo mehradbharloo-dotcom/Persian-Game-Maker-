@@ -14,7 +14,7 @@ button,select,input{font:inherit}button{border:0;border-radius:6px;padding:8px 1
 @media(max-width:760px){.layout{grid-template-columns:220px 1fr}.tag{display:none}.logo{font-size:15px}.top{padding:0 7px;gap:5px}button{padding:7px;font-size:11px}}
 </style></head>
 <body>
-<header class="top"><div class="logo">Persian Game Maker</div><div class="tag">ویرایشگر سه‌بعدی فارسی | نسخه ۴</div><div class="actions"><button id="addCube">＋ مکعب</button><button id="addSphere">＋ کره</button><button id="addCylinder">＋ استوانه</button><button class="secondary" id="save">ذخیره</button><button class="secondary" id="load">بارگذاری</button></div></header>
+<header class="top"><div class="logo">Persian Game Maker</div><div class="tag">ویرایشگر سه‌بعدی فارسی | نسخه ۵</div><div class="actions"><button id="addCube">＋ مکعب</button><button id="addSphere">＋ کره</button><button id="addCylinder">＋ استوانه</button><button class="secondary" id="save">ذخیره</button><button class="secondary" id="load">بارگذاری</button></div></header>
 <div class="layout"><aside class="side">
 <h3>اشیای صحنه</h3><div id="objects"></div>
 <div class="row"><button class="danger" id="delete">حذف انتخاب‌شده</button><button class="secondary" id="duplicate">تکثیر</button></div>
@@ -24,7 +24,7 @@ button,select,input{font:inherit}button{border:0;border-radius:6px;padding:8px 1
 <div class="field"><label>چرخش X</label><input id="rx" type="number" step="5"></div><div class="field"><label>چرخش Y</label><input id="ry" type="number" step="5"></div><div class="field"><label>چرخش Z</label><input id="rz" type="number" step="5"></div>
 <div class="field"><label>اندازه</label><input id="scale" type="number" min="0.1" max="10" step="0.1"></div>
 <div class="row"><button class="secondary" id="resetObj">بازنشانی تنظیمات</button></div>
-<div class="hint">راهنما<br>• کشیدن فضای خالی: چرخاندن دوربین<br>• کلیک روی شیء: انتخاب<br>• چرخ ماوس: بزرگ‌نمایی<br>• برای جابه‌جایی دقیق، مقدار محورهای X، Y و Z را تغییر بده<br>• ابزارهای جابه‌جایی، چرخش و تغییر اندازه را از نوار بالا انتخاب کن و شیء انتخاب‌شده را بکش<br>• در ابزار جابه‌جایی، Shift حرکت عمودی می‌دهد<br>• در ابزار چرخش، کشیدن افقی چرخش Y و کشیدن عمودی چرخش X را تغییر می‌دهد<br>• در ابزار اندازه، کشیدن بالا و پایین اندازه را تغییر می‌دهد<br>• ذخیره و بارگذاری، صحنه را در همین مرورگر نگه می‌دارد</div>
+<div class="hint">راهنما<br>• کشیدن فضای خالی: چرخاندن دوربین<br>• کلیک روی شیء: انتخاب<br>• چرخ ماوس: بزرگ‌نمایی<br>• برای جابه‌جایی دقیق، مقدار محورهای X، Y و Z را تغییر بده<br>• ابزارهای جابه‌جایی، چرخش و تغییر اندازه را از نوار بالا انتخاب کن و شیء انتخاب‌شده را بکش<br>• محورهای رنگی کنار شیء انتخاب‌شده: X قرمز، Y سبز، Z آبی<br>• در ابزار جابه‌جایی، Shift حرکت عمودی می‌دهد<br>• در ابزار چرخش، کشیدن افقی چرخش Y و کشیدن عمودی چرخش X را تغییر می‌دهد<br>• در ابزار اندازه، کشیدن بالا و پایین اندازه را تغییر می‌دهد<br>• ذخیره و بارگذاری، صحنه را در همین مرورگر نگه می‌دارد</div>
 </aside>
 <main class="workspace"><div class="toolbar"><span>نمای سه‌بعدی</span><span>•</span><span id="count">۰ شیء</span><span>•</span><span id="selectedLabel">هیچ شیئی انتخاب نشده</span><button class="secondary" id="moveTool" aria-pressed="false">✥ جابه‌جایی</button><button class="secondary" id="rotateTool" aria-pressed="false">↻ چرخش</button><button class="secondary" id="scaleTool" aria-pressed="false">⤢ تغییر اندازه</button><button class="secondary" id="resetCamera">بازنشانی دوربین</button></div><div class="view"><canvas id="scene"></canvas><div id="notice">برای انتخاب، روی یک شیء کلیک کن</div></div><div class="status" id="status">آماده | موتور گرافیکی WebGL</div></main></div>
 <script>
@@ -64,8 +64,31 @@ function attr(buffer,loc){gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.enableVertexA
 var grid=[],gridColors=[];function line(a,b){grid.push(a[0],a[1],a[2],b[0],b[1],b[2]);for(var i=0;i<2;i++)gridColors.push(.24,.28,.35);}
 for(var k=-10;k<=10;k++){line([k,-.52,-10],[k,-.52,10]);line([-10,-.52,k],[10,-.52,k]);}
 var gb=gl.createBuffer(),gc=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,gb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(grid),gl.STATIC_DRAW);gl.bindBuffer(gl.ARRAY_BUFFER,gc);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(gridColors),gl.STATIC_DRAW);
+var axisBuffer=gl.createBuffer(),axisColorBuffer=gl.createBuffer();
 function draw(){var w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;var d=Math.min(window.devicePixelRatio||1,2),W=Math.floor(w*d),H=Math.floor(h*d);if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;}gl.viewport(0,0,W,H);gl.clearColor(.08,.10,.14,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);var vp=mul(perspective(Math.PI/4,W/H,.1,100),camera());gl.uniformMatrix4fv(locM,false,new Float32Array(vp));attr(gb,locP);attr(gc,locC);gl.drawArrays(gl.LINES,0,grid.length/3);
-items.forEach(function(o,i){var data=meshes[o.type],buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);attr(buf,locP);var c=[];for(var j=0;j<data.length/3;j++){var shade=i===selected?[.25,.72,1]:[.25,.53,.82];c.push(shade[0],shade[1],shade[2]);}var cb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,cb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(c),gl.STATIC_DRAW);attr(cb,locC);gl.uniformMatrix4fv(locM,false,new Float32Array(mul(vp,model(o))));gl.drawArrays(gl.TRIANGLES,0,data.length/3);gl.deleteBuffer(buf);gl.deleteBuffer(cb);});}
+items.forEach(function(o,i){var data=meshes[o.type],buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);attr(buf,locP);var c=[];for(var j=0;j<data.length/3;j++){var shade=i===selected?[.25,.72,1]:[.25,.53,.82];c.push(shade[0],shade[1],shade[2]);}var cb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,cb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(c),gl.STATIC_DRAW);attr(cb,locC);gl.uniformMatrix4fv(locM,false,new Float32Array(mul(vp,model(o))));gl.drawArrays(gl.TRIANGLES,0,data.length/3);gl.deleteBuffer(buf);gl.deleteBuffer(cb);});
+if(selected>=0&&items[selected]){
+var o=items[selected],L=Math.max(1.15,o.s*1.6),x=o.x,y=o.y,z=o.z;
+var axisVertices=[
+x,y,z, x+L,y,z,  x+L,y,z, x+L-.22*L,y+.08*L,z,  x+L,y,z, x+L-.22*L,y-.08*L,z,
+x,y,z, x,y+L,z,  x,y+L,z, x+.08*L,y+L-.22*L,z,  x,y+L,z, x-.08*L,y+L-.22*L,z,
+x,y,z, x,y,z+L,  x,y,z+L, x+.08*L,y,z+L-.22*L,  x,y,z+L, x-.08*L,y,z+L-.22*L
+];
+var axisColors=[];
+for(var ai=0;ai<6;ai++)axisColors.push(1,.22,.22);
+for(var ai=0;ai<6;ai++)axisColors.push(.25,1,.38);
+for(var ai=0;ai<6;ai++)axisColors.push(.25,.58,1);
+gl.bindBuffer(gl.ARRAY_BUFFER,axisBuffer);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(axisVertices),gl.DYNAMIC_DRAW);
+attr(axisBuffer,locP);
+gl.bindBuffer(gl.ARRAY_BUFFER,axisColorBuffer);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(axisColors),gl.DYNAMIC_DRAW);
+attr(axisColorBuffer,locC);
+gl.uniformMatrix4fv(locM,false,new Float32Array(vp));
+gl.lineWidth(3);
+gl.drawArrays(gl.LINES,0,axisVertices.length/3);
+}
+}
 function refresh(){objectsEl.innerHTML="";items.forEach(function(o,i){var el=document.createElement("div");el.className="object"+(i===selected?" active":"");el.textContent=o.name+" — "+o.type;el.addEventListener("click",function(){selected=i;refresh();draw();});objectsEl.appendChild(el);});document.getElementById("count").textContent=items.length+" شیء";document.getElementById("selectedLabel").textContent=selected>=0?items[selected].name:"هیچ شیئی انتخاب نشده";var ids=["objName","px","py","pz","rx","ry","rz","scale"],keys=["name","x","y","z","rx","ry","rz","s"];ids.forEach(function(id,j){var el=document.getElementById(id);el.disabled=selected<0;el.value=selected<0?"":items[selected][keys[j]];});}
 function edit(){if(selected<0)return;var o=items[selected];o.name=document.getElementById("objName").value||o.type;["x","y","z","rx","ry","rz"].forEach(function(k){var v=Number(document.getElementById(({x:"px",y:"py",z:"pz",rx:"rx",ry:"ry",rz:"rz"})[k]).value);o[k]=isFinite(v)?v:0;});o.s=Math.max(.1,Math.min(10,Number(document.getElementById("scale").value)||1));refresh();draw();}
 ["objName","px","py","pz","rx","ry","rz","scale"].forEach(function(id){document.getElementById(id).addEventListener("change",edit);});
