@@ -14,7 +14,7 @@ button,select,input{font:inherit}button{border:0;border-radius:6px;padding:8px 1
 @media(max-width:760px){.layout{grid-template-columns:220px 1fr}.tag{display:none}.logo{font-size:15px}.top{padding:0 7px;gap:5px}button{padding:7px;font-size:11px}}
 </style></head>
 <body>
-<header class="top"><div class="logo">Persian Game Maker</div><div class="tag">ویرایشگر سه‌بعدی فارسی | نسخه ۲</div><div class="actions"><button id="addCube">＋ مکعب</button><button id="addSphere">＋ کره</button><button id="addCylinder">＋ استوانه</button><button class="secondary" id="save">ذخیره</button><button class="secondary" id="load">بارگذاری</button></div></header>
+<header class="top"><div class="logo">Persian Game Maker</div><div class="tag">ویرایشگر سه‌بعدی فارسی | نسخه ۳</div><div class="actions"><button id="addCube">＋ مکعب</button><button id="addSphere">＋ کره</button><button id="addCylinder">＋ استوانه</button><button class="secondary" id="save">ذخیره</button><button class="secondary" id="load">بارگذاری</button></div></header>
 <div class="layout"><aside class="side">
 <h3>اشیای صحنه</h3><div id="objects"></div>
 <div class="row"><button class="danger" id="delete">حذف انتخاب‌شده</button><button class="secondary" id="duplicate">تکثیر</button></div>
@@ -24,15 +24,15 @@ button,select,input{font:inherit}button{border:0;border-radius:6px;padding:8px 1
 <div class="field"><label>چرخش X</label><input id="rx" type="number" step="5"></div><div class="field"><label>چرخش Y</label><input id="ry" type="number" step="5"></div><div class="field"><label>چرخش Z</label><input id="rz" type="number" step="5"></div>
 <div class="field"><label>اندازه</label><input id="scale" type="number" min="0.1" max="10" step="0.1"></div>
 <div class="row"><button class="secondary" id="resetObj">بازنشانی تنظیمات</button></div>
-<div class="hint">راهنما<br>• کشیدن فضای خالی: چرخاندن دوربین<br>• کلیک روی شیء: انتخاب<br>• چرخ ماوس: بزرگ‌نمایی<br>• برای جابه‌جایی دقیق، مقدار محورهای X، Y و Z را تغییر بده<br>• ذخیره و بارگذاری، صحنه را در همین مرورگر نگه می‌دارد</div>
+<div class="hint">راهنما<br>• کشیدن فضای خالی: چرخاندن دوربین<br>• کلیک روی شیء: انتخاب<br>• چرخ ماوس: بزرگ‌نمایی<br>• برای جابه‌جایی دقیق، مقدار محورهای X، Y و Z را تغییر بده<br>• برای جابه‌جایی با ماوس، ابتدا شیء را انتخاب و ابزار جابه‌جایی را فعال کن؛ کشیدن ماوس حرکت افقی و Shift حرکت عمودی می‌دهد<br>• ذخیره و بارگذاری، صحنه را در همین مرورگر نگه می‌دارد</div>
 </aside>
-<main class="workspace"><div class="toolbar"><span>نمای سه‌بعدی</span><span>•</span><span id="count">۰ شیء</span><span>•</span><span id="selectedLabel">هیچ شیئی انتخاب نشده</span><button class="secondary" id="resetCamera">بازنشانی دوربین</button></div><div class="view"><canvas id="scene"></canvas><div id="notice">برای انتخاب، روی یک شیء کلیک کن</div></div><div class="status" id="status">آماده | موتور گرافیکی WebGL</div></main></div>
+<main class="workspace"><div class="toolbar"><span>نمای سه‌بعدی</span><span>•</span><span id="count">۰ شیء</span><span>•</span><span id="selectedLabel">هیچ شیئی انتخاب نشده</span><button class="secondary" id="moveTool" aria-pressed="false">✥ ابزار جابه‌جایی</button><button class="secondary" id="resetCamera">بازنشانی دوربین</button></div><div class="view"><canvas id="scene"></canvas><div id="notice">برای انتخاب، روی یک شیء کلیک کن</div></div><div class="status" id="status">آماده | موتور گرافیکی WebGL</div></main></div>
 <script>
 (function(){
 "use strict";
 var canvas=document.getElementById("scene"),gl=canvas.getContext("webgl")||canvas.getContext("experimental-webgl"),status=document.getElementById("status"),objectsEl=document.getElementById("objects");
 if(!gl){status.textContent="مرورگر یا کارت گرافیک از WebGL پشتیبانی نمی‌کند.";return;}
-var items=[],selected=-1,yaw=-.65,pitch=.45,zoom=8,drag=false,moved=false,lastX=0,lastY=0,program;
+var items=[],selected=-1,yaw=-.65,pitch=.45,zoom=8,drag=false,moved=false,lastX=0,lastY=0,program;\nvar moveMode=false,objectDragging=false;
 var vs="attribute vec3 p; attribute vec3 c; uniform mat4 mvp; varying vec3 color; void main(){gl_Position=mvp*vec4(p,1.0);color=c;}";
 var fs="precision mediump float; varying vec3 color; void main(){gl_FragColor=vec4(color,1.0);}";
 function shader(t,s){var sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
@@ -75,10 +75,10 @@ document.getElementById("resetObj").onclick=function(){if(selected<0)return;var 
 document.getElementById("resetCamera").onclick=function(){yaw=-.65;pitch=.45;zoom=8;draw();};
 document.getElementById("save").onclick=function(){try{localStorage.setItem("pgm-scene-v2",JSON.stringify(items));status.textContent="صحنه در این مرورگر ذخیره شد."; }catch(e){status.textContent="ذخیره‌سازی در این مرورگر ممکن نشد."; }};
 document.getElementById("load").onclick=function(){try{var data=JSON.parse(localStorage.getItem("pgm-scene-v2")||"null");if(!Array.isArray(data))throw Error();items=data;selected=items.length?0:-1;refresh();draw();status.textContent="صحنه بارگذاری شد.";}catch(e){status.textContent="ذخیره معتبری پیدا نشد."; }};
-function project(o){var m=mul(mul(perspective(Math.PI/4,canvas.width/canvas.height,.1,100),camera()),tr(o.x,o.y,o.z));var x=m[0]*0+m[4]*0+m[8]*0+m[12],y=m[1]*0+m[5]*0+m[9]*0+m[13],z=m[3]*0+m[7]*0+m[11]*0+m[15];if(z<=0)return null;return{x:(x/z*.5+.5)*canvas.width,y:(1-(y/z*.5+.5))*canvas.height};}
-canvas.addEventListener("mousedown",function(e){drag=true;moved=false;lastX=e.clientX;lastY=e.clientY;});
-window.addEventListener("mouseup",function(e){if(!drag)return;drag=false;if(!moved){var r=canvas.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*canvas.width,my=(e.clientY-r.top)/r.height*canvas.height,best=-1,dist=1e9;items.forEach(function(o,i){var p=project(o);if(!p)return;var d=Math.hypot(p.x-mx,p.y-my);if(d<dist&&d<Math.max(35,canvas.width*.045)){dist=d;best=i;}});if(best>=0){selected=best;refresh();draw();status.textContent="شیء انتخاب شد: "+items[selected].name;}}});
-window.addEventListener("mousemove",function(e){if(!drag)return;var dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;if(moved){yaw+=dx*.008;pitch=Math.max(-1.45,Math.min(1.45,pitch+dy*.008));draw();}lastX=e.clientX;lastY=e.clientY;});
+document.getElementById("moveTool").onclick=function(){\nmoveMode=!moveMode;\nthis.setAttribute("aria-pressed",moveMode?"true":"false");\nthis.style.background=moveMode?"#16834b":"";\nstatus.textContent=moveMode?"ابزار جابه‌جایی فعال است؛ شیء انتخاب‌شده را با ماوس بکش.":"ابزار جابه‌جایی غیرفعال شد.";\n};\nfunction project(o){var m=mul(mul(perspective(Math.PI/4,canvas.width/canvas.height,.1,100),camera()),tr(o.x,o.y,o.z));var x=m[0]*0+m[4]*0+m[8]*0+m[12],y=m[1]*0+m[5]*0+m[9]*0+m[13],z=m[3]*0+m[7]*0+m[11]*0+m[15];if(z<=0)return null;return{x:(x/z*.5+.5)*canvas.width,y:(1-(y/z*.5+.5))*canvas.height};}
+canvas.addEventListener("mousedown",function(e){drag=true;moved=false;objectDragging=moveMode&&selected>=0;lastX=e.clientX;lastY=e.clientY;if(objectDragging){status.textContent="در حال جابه‌جایی شیء؛ برای حرکت عمودی Shift را نگه دار.";}});
+window.addEventListener("mouseup",function(e){if(!drag)return;drag=false;if(objectDragging){objectDragging=false;if(moved)status.textContent="موقعیت شیء تغییر کرد.";return;}if(!moved){var r=canvas.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*canvas.width,my=(e.clientY-r.top)/r.height*canvas.height,best=-1,dist=1e9;items.forEach(function(o,i){var p=project(o);if(!p)return;var d=Math.hypot(p.x-mx,p.y-my);if(d<dist&&d<Math.max(35,canvas.width*.045)){dist=d;best=i;}});if(best>=0){selected=best;refresh();draw();status.textContent="شیء انتخاب شد: "+items[selected].name;}}});
+window.addEventListener("mousemove",function(e){if(!drag)return;var dx=e.clientX-lastX,dy=e.clientY-lastY;if(objectDragging){if(Math.abs(dx)+Math.abs(dy)>0)moved=true;var o=items[selected],speed=zoom*.003;if(e.shiftKey){o.y-=dy*speed;}else{o.x+=(dx*Math.cos(yaw)+dy*Math.sin(yaw))*speed;o.z+=(dx*Math.sin(yaw)-dy*Math.cos(yaw))*speed;}lastX=e.clientX;lastY=e.clientY;refresh();draw();return;}if(Math.abs(dx)+Math.abs(dy)>2)moved=true;if(moved){yaw+=dx*.008;pitch=Math.max(-1.45,Math.min(1.45,pitch+dy*.008));draw();}lastX=e.clientX;lastY=e.clientY;});
 canvas.addEventListener("wheel",function(e){e.preventDefault();zoom=Math.max(3,Math.min(18,zoom+e.deltaY*.008));draw();},{passive:false});
 window.addEventListener("resize",draw);make("مکعب");status.textContent="ویرایشگر آماده است.";
 })();
