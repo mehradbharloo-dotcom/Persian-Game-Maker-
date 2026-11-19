@@ -74,10 +74,12 @@ x,y,z, x+L,y,z,  x+L,y,z, x+L-.22*L,y+.08*L,z,  x+L,y,z, x+L-.22*L,y-.08*L,z,
 x,y,z, x,y+L,z,  x,y+L,z, x+.08*L,y+L-.22*L,z,  x,y+L,z, x-.08*L,y+L-.22*L,z,
 x,y,z, x,y,z+L,  x,y,z+L, x+.08*L,y,z+L-.22*L,  x,y,z+L, x-.08*L,y,z+L-.22*L
 ];
-var axisColors=[];\nif(transformMode==="rotate"){for(var ri=0;ri<3;ri++){for(var rj=0;rj<48;rj++){var a1=rj*Math.PI/24,a2=(rj+1)*Math.PI/24,R=L*.72,p1,p2;if(ri===0){p1=[x,y+Math.cos(a1)*R,z+Math.sin(a1)*R];p2=[x,y+Math.cos(a2)*R,z+Math.sin(a2)*R];}else if(ri===1){p1=[x+Math.cos(a1)*R,y,z+Math.sin(a1)*R];p2=[x+Math.cos(a2)*R,y,z+Math.sin(a2)*R];}else{p1=[x+Math.cos(a1)*R,y+Math.sin(a1)*R,z];p2=[x+Math.cos(a2)*R,y+Math.sin(a2)*R,z];}axisVertices.push(p1[0],p1[1],p1[2],p2[0],p2[1],p2[2]);}}}
+var axisColors=[];
+if(transformMode==="rotate"){for(var ri=0;ri<3;ri++){for(var rj=0;rj<48;rj++){var a1=rj*Math.PI/24,a2=(rj+1)*Math.PI/24,R=L*.72,p1,p2;if(ri===0){p1=[x,y+Math.cos(a1)*R,z+Math.sin(a1)*R];p2=[x,y+Math.cos(a2)*R,z+Math.sin(a2)*R];}else if(ri===1){p1=[x+Math.cos(a1)*R,y,z+Math.sin(a1)*R];p2=[x+Math.cos(a2)*R,y,z+Math.sin(a2)*R];}else{p1=[x+Math.cos(a1)*R,y+Math.sin(a1)*R,z];p2=[x+Math.cos(a2)*R,y+Math.sin(a2)*R,z];}axisVertices.push(p1[0],p1[1],p1[2],p2[0],p2[1],p2[2]);}}}
 for(var ai=0;ai<6;ai++)axisColors.push(1,.22,.22);
 for(var ai=0;ai<6;ai++)axisColors.push(.25,1,.38);
-for(var ai=0;ai<6;ai++)axisColors.push(.25,.58,1);\nif(transformMode==="rotate"){for(var ci=0;ci<3;ci++){var cc=[[1,.22,.22],[.25,1,.38],[.25,.58,1]][ci];for(var cj=0;cj<96;cj++)axisColors.push(cc[0],cc[1],cc[2]);}}
+for(var ai=0;ai<6;ai++)axisColors.push(.25,.58,1);
+if(transformMode==="rotate"){for(var ci=0;ci<3;ci++){var cc=[[1,.22,.22],[.25,1,.38],[.25,.58,1]][ci];for(var cj=0;cj<96;cj++)axisColors.push(cc[0],cc[1],cc[2]);}}
 gl.bindBuffer(gl.ARRAY_BUFFER,axisBuffer);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(axisVertices),gl.DYNAMIC_DRAW);
 attr(axisBuffer,locP);
